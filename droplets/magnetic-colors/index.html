@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Magnetic Colors</title>
+	<script src="js/d3/d3.min.js"></script>
+	<script src="js/util.js"></script>
+</head>
+<body>
+	
+	<canvas id="canvas"></canvas>
+
+
+	<script>
+		var canvas = d3.select("#canvas").node();
+		canvas.width = 1200;
+		canvas.height = 600;
+
+		var img = new Image();
+		img.src = "img/matchstick-fire-screenshot.png";
+
+		var ctx = canvas.getContext("2d");
+
+		ctx.drawImage(img, 0, 0);
+
+		// var imgdata = ctx.createImageData(345,398);
+		var imgdata = ctx.getImageData(0, 0, 345, 398);
+
+		var w = 345;
+		var h = 398;
+		var imgDim = { w: w, h: h };
+		var wstride = 3;
+		var hstride = 2;
+
+		var pixels = formPixels(imgdata.data);
+		var pixelMat = formGrid(pixels, imgDim);
+		var clusters = formClusters(pixels, imgDim, wstride, hstride);
+
+		
+		function formPixels(data) {
+			var pixels = [];
+			for (var i=0; i<data.length; i+=4) {
+				var r = data[i];
+				var g = data[i+1];
+				var b = data[i+2];
+				pixels.push({ r:r, g:g, b:b });
+			}
+			return pixels;
+		}
+
+		function formGrid(data, imgDim) {
+			var pixels = [];
+			for (var i=0; i<imgDim.w; i++) {
+				var p = [];
+				for (var j=0; j<imgDim.h; j++) {
+					p.push(data[i*imgDim.w + j])
+				}
+				pixels.push(p);
+			}
+			return pixels;
+		}
+
+		function formClusters(data, imgDim, cw, ch) {
+			var clusters = [];
+			var len = data.length;
+
+			for (var i=0; i<len; i++) {
+				var clust = [];
+				for (var j=0; j<cw; j++) {
+					clust.push(i*cw + j);
+				}
+				clusters.push(clust);
+			}
+			return clusters;
+		}
+
+		function grayscaleColors(data) {
+			for (var i=0; i<data.length; i+=4) {
+				var r = data[i];
+				var g = data[i+1];
+				var b = data[i+2];
+				var avg = sum([r,g,b]) / 3;
+
+				data[i] = avg;
+				data[i+1] = avg;
+				data[i+2] = avg;
+			}
+
+			return data;
+		}
+
+		function invertColors(data) {
+			for (var i=0; i<data.length; i+=4) {
+				var r = data[i];
+				var g = data[i+1];
+				var b = data[i+2];
+
+				data[i] = 255 - r;
+				data[i+1] = 255 - g;
+				data[i+2] = 255 - b;
+			}
+
+			return data;
+		}
+
+
+		
+
+	</script>
+</body>
+</html>
