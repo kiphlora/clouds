@@ -12,45 +12,49 @@
 
 
 	<script>
-		var canvas = d3.select("#canvas").node();
-		canvas.width = 1200;
-		canvas.height = 600;
 
-		var img = new Image();
-		img.src = "img/matchstick-fire-screenshot.png";
+		window.onload = function() {
+			var canvas = d3.select("#canvas").node();
+			canvas.width = 1200;
+			canvas.height = 600;
 
-		var ctx = canvas.getContext("2d");
+			var img = new Image();
+			img.src = "img/matchstick-fire-screenshot.png";
 
-		ctx.drawImage(img, 0, 0);
+			var ctx = canvas.getContext("2d");
 
-		// var imgdata = ctx.createImageData(345,398);
-		var imgdata = ctx.getImageData(0, 0, 345, 398);
+			ctx.drawImage(img, 0, 0);
 
-		var r = [];
-		var g = [];
-		var b = [];
-		var a = [];
-		for (var i=0; i<imgdata.data.length; i+=4) {
-			r.push(imgdata.data[i]);
-			g.push(imgdata.data[i+1]);
-			b.push(imgdata.data[i+2]);
-			a.push(imgdata.data[i+3]);
+			// var imgdata = ctx.createImageData(345,398);
+			var imgdata = ctx.getImageData(0, 0, 345, 398);
+
+			var r = [];
+			var g = [];
+			var b = [];
+			var a = [];
+			for (var i=0; i<imgdata.data.length; i+=4) {
+				r.push(imgdata.data[i]);
+				g.push(imgdata.data[i+1]);
+				b.push(imgdata.data[i+2]);
+				a.push(imgdata.data[i+3]);
+			}
+
+			var len = r.length;
+			rBar = sum(r) / r.length;
+			gBar = sum(g) / g.length;
+			bBar = sum(b) / b.length;
+			aBar = sum(a) / (255 * a.length);
+
+			var colordata = grayscaleColors(imgdata.data);
+			imgdata.data = colordata;
+			ctx.putImageData(imgdata, 400, 0);
+
+			var imgdata = ctx.getImageData(0, 0, 345, 398)
+			var colordata = invertColors(imgdata.data);
+			imgdata.data = colordata;
+			ctx.putImageData(imgdata, 800, 0);
+
 		}
-
-		var len = r.length;
-		rBar = sum(r) / r.length;
-		gBar = sum(g) / g.length;
-		bBar = sum(b) / b.length;
-		aBar = sum(a) / (255 * a.length);
-
-		var colordata = grayscaleColors(imgdata.data);
-		imgdata.data = colordata;
-		ctx.putImageData(imgdata, 400, 0);
-
-		var imgdata = ctx.getImageData(0, 0, 345, 398)
-		var colordata = invertColors(imgdata.data);
-		imgdata.data = colordata;
-		ctx.putImageData(imgdata, 800, 0);
 
 		function grayscaleColors(data) {
 			for (var i=0; i<data.length; i+=4) {
