@@ -13,13 +13,15 @@
 
 	<script>
 
+		var img = new Image();
+		img.src = "img/matchstick-fire-screenshot.png";
+
 		window.onload = function() {
 			var canvas = d3.select("#canvas").node();
 			canvas.width = 1200;
 			canvas.height = 600;
 
-			var img = new Image();
-			img.src = "img/matchstick-fire-screenshot.png";
+			
 
 			var ctx = canvas.getContext("2d");
 
@@ -54,7 +56,7 @@
 			imgdata.data = colordata;
 			ctx.putImageData(imgdata, 800, 0);
 
-		}
+		};
 
 		function grayscaleColors(data) {
 			for (var i=0; i<data.length; i+=4) {
