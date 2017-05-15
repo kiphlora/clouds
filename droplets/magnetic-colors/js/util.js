@@ -55,3 +55,32 @@ function min(arr) {
 	}
 	return m;
 }
+
+function randInt(min, max) {
+	var range = max - min;
+	return Math.floor(Math.random() * (range + 1)) + min;
+}
+
+function randReal(min, max) {
+	return Math.random() * (max - min) + min;
+}
+
+function radToDeg(rad) {
+	return rad * (180 / Math.PI);
+}
+
+function mod(n, m) {
+	return n % m >= 0 ? n % m : n % m + m;
+}
+
+function freq(array, item) {
+	var count = 0;
+	for (var i=0; i<array.length; i++) {
+		if (array[i] === item) count++;
+	}
+	return count;
+}
+
+function resetCanvasMatrix(canvasContext) {
+	canvasContext.setTransform(1, 0, 0, 1, 0, 0);
+}
