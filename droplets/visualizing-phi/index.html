@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Visualizing The Golden Ratio</title>
+	<script src="js/d3/d3.min.js"></script>
+	<script src="js/util.js"></script>
+	<script src="js/Vec2.js"></script>
+
+	<style>
+		canvas {
+			padding: 20px;
+		}
+	</style>
+</head>
+<body>
+	
+	<canvas id="canvas"></canvas>
+
+
+	<script>
+
+		var phi = d3.text("data/phi-to-100k-places.txt", function(error, data) {
+			console.log(error);
+			console.log(data);
+
+			var decimals = data.substring(2,data.length);
+			console.log(decimals);
+
+			var digitFreqs = buildArray(10, 0);
+
+			for (var i=0; i<decimals.length; i++) {
+				var n = +decimals.charAt(i);
+				digitFreqs[n]++;
+			}
+
+			console.log(digitFreqs);
+
+			var lines = digitLines(10, 10);
+
+			console.log(lines);
+
+			var canvas = document.getElementById("canvas");
+			canvas.width = 3100;
+			canvas.height = 3100;
+			var ctx = canvas.getContext("2d");
+
+			
+			// ctx.translate(canvas.width/2, canvas.height/2);
+			// for (var i=0; i<lines.length; i++) {
+			// 	ctx.beginPath();
+			// 	var l = lines[i];
+			// 	var b = l.begin;
+			// 	var e = l.end;
+			// 	console.log(l.color);
+			// 	ctx.strokeStyle = l.color;
+			// 	ctx.moveTo(b.x, b.y);
+			// 	ctx.lineTo(e.x, e.y);
+			// 	ctx.stroke();
+			// 	ctx.closePath();
+			// }
+
+			// var points = buildPath(decimals.substring(0,1000), lines);
+			// console.log(points);
+
+			// scale so the image fits
+			ctx.scale(1,1);	
+			// drawPath(ctx, lines, points, new Vec2(canvas.width/2, canvas.height/2));
+			var sub = decimals;//.substring(0,20000);
+			console.log(sub);
+			var extents = drawDynamicPath(ctx, lines, sub, new Vec2(canvas.width/2, canvas.height/2));
+
+			console.log(extents);
+
+
+
+		})
+
+		function drawDynamicPath(ctx, lines, string, initialPoint) {
+			var absPoints = [];
+			var current = initialPoint.clone();
+
+			absPoints.push({ x: current.x, y: current.y });
+
+			ctx.translate(initialPoint.x, initialPoint.y);
+
+			var side = 10;
+			ctx.beginPath();
+			ctx.fillRect(-side/2,-side/2,side,side);
+			ctx.closePath();
+
+			for (var i=0; i<string.length; i++) {
+				ctx.beginPath();
+
+				var digit = +string[i];
+				var line = lines[digit];
+				ctx.strokeStyle = line.color;
+
+				ctx.moveTo(0,0);
+				ctx.lineTo(line.end.x, line.end.y);
+				ctx.translate(line.end.x, line.end.y);
+
+				current = current.add(line.end.clone());
+
+				absPoints.push({ x: current.x, y: current.y });
+
+				ctx.stroke();
+				ctx.closePath();
+			}
+
+			side = 5;
+			ctx.beginPath();
+			ctx.fillRect(-side/2,-side/2,side,side);
+			ctx.closePath();
+
+			var xExtent = d3.extent(absPoints.map(function(m){ return m.x; }));
+			var yExtent = d3.extent(absPoints.map(function(m){ return m.y; }));
+
+			return [xExtent, yExtent];
+		}
+
+		function drawPath(ctx, lines, points, initialPoint) {
+			ctx.beginPath();
+			ctx.translate(initialPoint.x, initialPoint.y);
+
+			for (var i=0; i<points.length-1; i++) {
+				var p1 = points[i];
+				var p2 = points[i+1];
+
+				ctx.moveTo(p1.x, p1.y);
+				ctx.lineTo(p2.x, p2.y);
+				ctx.stroke();
+			}
+		}
+
+		function digitLines(n, scale) {
+			var s = undefined ? 1 : scale;
+			var lines = [];
+			var begin = Vec2.zero();
+			var angle = 2 * Math.PI / n;
+			var angleOffset = -Math.PI / 2;
+
+			for (var i=0; i<n; i++) {
+				var end = Vec2.normWithAngle(angle * i + angleOffset).mag(s);
+				var r = randInt(0,255);
+				var g = randInt(0,255);
+				var b = randInt(0,255);
+				lines[i] = { begin: begin, end: end, color: "rgba(" + r + "," + g + "," + b + ",0.3)" };
+				// console.log(lines[i].color);
+			}
+
+			return lines;
+		}
+
+		function buildPath(data, lines) {
+			var points = [];
+			var current = Vec2.zero();
+			points.push(current.clone());
+
+			for (var i=0; i<data.length; i++) {
+				var digit = +data[i];
+				var end = lines[digit].end;
+				current = current.add(end);
+				points.push(current.clone());
+			}
+
+			return points;
+		}
+
+		
+
+		
+
+	</script>
+</body>
+</html>

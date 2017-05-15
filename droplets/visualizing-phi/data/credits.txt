@@ -1,0 +1,8 @@
+phi-to-100k-places.txt metadata:
+
+(I accessed it from https://www.goldennumber.net/phi-million-places/ on 14 May 2017)
+Phi Produced by A.Sh phi Calculator
+Represnting the First 100000 Decimal Places of PHI
+Produced in 999.719 Seconds
+
+
