@@ -26,20 +26,21 @@
 		var hl = hexLines(70);
 
 		var text = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "a", "b", "c", "d", "e", "f"];
+		var colorlist = [];
 		var canvas = document.getElementById("canvas");
 		canvas.width = 1200;
-		canvas.height = 1000;
+		canvas.height = 700;
 		var ctx = canvas.getContext("2d");
 
 
-		var et = 0;
+		var et = 1000;
 		var ct = Date.now();
 		var pt = Date.now();
+		var delay = 1000;
 		var raf = window.requestAnimationFrame(loop);
-		var r = 0;
+
 		function loop() {
-			if (r >= 256) window.cancelAnimationFrame(raf);
-			else raf = window.requestAnimationFrame(loop);
+		 raf = window.requestAnimationFrame(loop);
 
 			ct = Date.now();
 			et += ct - pt;
@@ -47,29 +48,12 @@
 
 			// console.log(ct + " | " + pt + " | " + et);
 
-			if (et >= 100) {
+			if (et >= delay) {
 				et = 0;
-				// color = Color().r(255).g(-1).b(-1).hex();
-				//r = randInt(0,255);
-				color = Color(r,0,255).hex();
-				console.log(color);
-				resetCanvasMatrix(ctx);
-				// ctx.clearRect(0,0,canvas.width,canvas.height);
-				ctx.clearRect(0,0,300,300);
-				ctx.beginPath();
-				ctx.fillStyle = Color("#ffffff").a(0.5);
-				// ctx.fillRect(0,0,canvas.width,canvas.height);
-				ctx.fill();
-				ctx.closePath();
-
-				ctx.fillStyle = color;
-				ctx.font="16px Helvetica";
-				ctx.textBaseline = "middle"; 
-				ctx.textAlign = "center"; 
-				ctx.fillText(color, 250, 100);
-				drawHexLegend(ctx, hl, loc);
-				drawDynamicPathHex(ctx, hl, color, center);
-				r++;
+				color = Color().hex();
+				colorlist.push(color);
+				hexTextLoc = new Vec2(250, 100);
+				draw(ctx, color, hl, hexTextLoc, loc, center);
 			}
 		}
 
@@ -77,34 +61,51 @@
 
 		var loc = new Vec2(100,100);
 
-		window.addEventListener("click", function(e){
+		function queue() {
+			raf = window.requestAnimationFrame(loop);
+		}
+		function dequeue() {
 			window.cancelAnimationFrame(raf);
-			// color = Color().hex();
-			// console.log(color);
-			// resetCanvasMatrix(ctx);
-			// ctx.clearRect(0,0,canvas.width,canvas.height);
-			// drawHexLegend(ctx, hl, loc);
-			// drawDynamicPathHex(ctx, hl, color, center);
+		}
 
+		var running = true;
+		window.addEventListener("click", function(e){
+			if (running) dequeue();
+			else queue();
+			running = !running;
+		});
+
+		window.addEventListener("keydown", function(e){
+			if (e.keyCode === 37) {
+				// left arrow
+				color = Color().hex();
+				hexTextLoc = new Vec2(250, 100);
+				draw(ctx, color, hl, hexTextLoc, loc, center);
+			}
 		})
+
+		function draw(ctx, color, hexlist, hexTextLoc, legendLoc, startPoint) {
+			console.log(color);
+			resetCanvasMatrix(ctx);
+			ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+			ctx.fillStyle = color;
+			ctx.font = "16px Helvetica";
+			ctx.textBaseline = "middle";
+			ctx.textAlign = "center";
+			ctx.fillText(color, hexTextLoc.x, hexTextLoc.y);
+			drawHexLegend(ctx, hexlist, legendLoc);
+			drawDynamicPathHex(ctx, hexlist, color, startPoint);
+		}
+
 		var center = new Vec2(canvas.width/2, canvas.height/2-100);
-		var color = "#000000";
-		var sub = color;
-		ctx.font="16px Helvetica";
-		ctx.textBaseline = "middle"; 
-		ctx.textAlign = "center"; 
-		ctx.fillText(sub, 250, 100);
-
-		// drawHexLegend(ctx, hl, loc);
-		// var extents = drawDynamicPathHex(ctx, hl, sub, center);
-
-		// console.log(extents);
+		
 
 		function drawHexLegend(ctx, hl, location) {
 			var lines = d3.range(16);
 			ctx.translate(location.x, location.y);
 			ctx.strokeStyle = "rgba(0,0,0,0.3)";
-			ctx.fillStyle = "rgba(0,0,0,1)";
+			ctx.fillStyle = "rgba(0,0,0,0.4)";
 			for (var i=0; i<lines.length; i++) {
 				ctx.beginPath();
 				var l = hl(i);
@@ -112,8 +113,15 @@
 				var e = l.end;
 				// console.log(l.color);
 				// ctx.strokeStyle = l.color;
-				ctx.moveTo(b.x, b.y);
+				var normLine = b.clone().add(Vec2.normWithAngle(e.clone().angle() - Math.PI/2).mag(11));
+				var negNormLine = normLine.clone().scale(-1);
+				
+				ctx.lineTo(negNormLine.x, negNormLine.y);
 				ctx.lineTo(e.x, e.y);
+				ctx.lineTo(normLine.x, normLine.y);
+				ctx.lineTo(0,0);
+				// ctx.moveTo(b.x, b.y);
+				// ctx.lineTo(e.x, e.y);
 
 				var tvec = e.clone();
 				var m = tvec.mag();
@@ -123,7 +131,8 @@
 				ctx.textAlign = "center"; 
 				ctx.fillText(text[i], tvec.x, tvec.y);
 
-				ctx.stroke();
+				// ctx.stroke();
+				ctx.fill();
 				ctx.closePath();
 			}
 		}
@@ -139,12 +148,7 @@
 
 			ctx.translate(initialPoint.x, initialPoint.y);
 
-			// var side = 10;
-			// ctx.beginPath();
-			// ctx.fillRect(-side/2,-side/2,side,side);
-			// ctx.closePath();
-
-			var radius = 7;
+			var radius = 8;
 
 			for (var i=0; i<string.length; i++) {
 				ctx.beginPath();
@@ -153,24 +157,41 @@
 				var line = lines(digit);
 
 				// ctx.strokeStyle = "rgba(0,0,0,0.2)";//Color(color).a(0.2).toString();
-				ctx.strokeStyle = Color(color).a(0.2).toString();
+				
 				ctx.fillStyle = color;
+				ctx.strokeStyle = "black";
+				ctx.lineWidth = 3;
+				ctx.arc(0, 0, radius, 0, 2*Math.PI);
+				ctx.fill();
+				ctx.lineWidth = 1;
+				ctx.closePath();
+				ctx.beginPath();
 
-				// ctx.arc(0,0,radius,0,2*Math.PI);
+				// ctx.strokeStyle = Color(color).a(0.7).toString();
+				ctx.strokeStyle = "rgba(0,0,0,0.4)";
 
 				ctx.textBaseline = "middle"; 
 				ctx.textAlign = "center"; 
 
-				
-
 				ctx.moveTo(0,0);
+
+				var normLine = line.begin.clone().add(Vec2.normWithAngle(line.end.clone().angle() - Math.PI/2).mag(5));
+				var negNormLine = normLine.clone().scale(-1);
 				
+				ctx.lineTo(negNormLine.x, negNormLine.y);
 				ctx.lineTo(line.end.x, line.end.y);
+				ctx.lineTo(normLine.x, normLine.y);
+				ctx.lineTo(0,0);
+				// ctx.stroke();
+				ctx.fill();
+				ctx.closePath();
+				ctx.beginPath();
 
 				var tvec = line.end.clone();
 				var m = tvec.mag();
 				tvec = tvec.mag(m * 0.5);
-				// ctx.fillText(digit, tvec.x + randInt(-5,5), tvec.y + randInt(-5,5));
+				var nvec = tvec.add(Vec2.normWithAngle(tvec.angle() + Math.PI/2).mag(15));
+				// ctx.fillText(digit, nvec.x, nvec.y);
 
 				ctx.translate(line.end.x, line.end.y);
 
@@ -178,21 +199,20 @@
 
 				absPoints.push({ x: current.x, y: current.y });
 
-
-
 				ctx.stroke();
 				ctx.fill();
 				ctx.closePath();
 			}
 
 			ctx.beginPath();
+			ctx.strokeStyle = "black";
+			ctx.lineWidth = 3;
 			// ctx.arc(0,0,radius,0,2*Math.PI);
+			ctx.stroke();
+			ctx.lineWidth = 1;
 			ctx.fill();
 			ctx.closePath();
-			// side = 5;
-			// ctx.beginPath();
-			// ctx.fillRect(-side/2,-side/2,side,side);
-			// ctx.closePath();
+			
 
 			var xExtent = d3.extent(absPoints.map(function(m){ return m.x; }));
 			var yExtent = d3.extent(absPoints.map(function(m){ return m.y; }));
@@ -207,7 +227,7 @@
 			var n = 16;
 			var lines = [];
 			var begin = Vec2.zero();
-			var angle = 2 * Math.PI / n;
+			var angle = 2*Math.PI / n;
 			var angleOffset = -Math.PI / 2;
 
 			for (var i=0; i<n; i++) {
