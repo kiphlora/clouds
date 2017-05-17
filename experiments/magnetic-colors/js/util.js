@@ -84,3 +84,14 @@ function freq(array, item) {
 function resetCanvasMatrix(canvasContext) {
 	canvasContext.setTransform(1, 0, 0, 1, 0, 0);
 }
+
+function randColor(a) {
+	var r = randInt(0,255);
+	var g = randInt(0,255);
+	var b = randInt(0,255);
+
+	var c = r + "," + g + "," + b;
+
+	if (a === undefined) return "rgb(" + c + ")";
+	else return "rgba(" + c + "," + a + ")";
+}
