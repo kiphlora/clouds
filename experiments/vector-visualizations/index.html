@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Visualizing Vectors</title>
+	<script src="js/d3/d3.min.js"></script>
+	<script src="js/util.js"></script>
+	<script src="js/Vec2.js"></script>
+
+	<style>
+		canvas {
+		}
+	</style>
+</head>
+<body>
+	
+	<canvas id="canvas"></canvas>
+
+
+	<script>
+
+			var canvas = document.getElementById("canvas");
+			canvas.width = 1200;
+			canvas.height = 800;
+			var center = new Vec2(canvas.width/2, canvas.height/2);
+			var ctx = canvas.getContext("2d");
+
+			// Experiment
+			// points that all start from the origin
+			var points = [];
+
+			for (var i=0; i<50; i++) {
+				points[i] = Vec2.randNorm().mag(randInt(10,50));
+				// points[i] = points[i].add(center);
+				var p = points[i];
+
+			}
+
+			// chain-linking points
+			// in order to connect the points together, the start of the current vector is the end of the previous one
+			var current = new Vec2(center.x, center.y);
+			for (var i=0; i<points.length; i++) {
+				ctx.beginPath();
+				ctx.moveTo(current.x, current.y);
+
+				var p = points[i].add(current);
+				ctx.lineTo(p.x, p.y);
+
+				current = p.clone();
+
+				ctx.strokeStyle = randColor();
+
+				ctx.stroke();
+				ctx.closePath();
+			}
+
+
+
+	</script>
+</body>
+</html>
