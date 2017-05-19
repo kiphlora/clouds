@@ -29,7 +29,7 @@
 		var colorlist = [];
 		var canvas = document.getElementById("canvas");
 		canvas.width = 1200;
-		canvas.height = 700;
+		canvas.height = 800;
 		var ctx = canvas.getContext("2d");
 
 
@@ -87,6 +87,7 @@
 		function draw(ctx, color, hexlist, hexTextLoc, legendLoc, startPoint) {
 			console.log(color);
 			resetCanvasMatrix(ctx);
+			// ctx.clearRect(0,0,300,300);
 			ctx.clearRect(0, 0, canvas.width, canvas.height);
 
 			ctx.fillStyle = color;
@@ -98,7 +99,7 @@
 			drawDynamicPathHex(ctx, hexlist, color, startPoint);
 		}
 
-		var center = new Vec2(canvas.width/2, canvas.height/2-100);
+		var center = new Vec2(canvas.width/2, canvas.height/2);
 		
 
 		function drawHexLegend(ctx, hl, location) {
@@ -135,6 +136,11 @@
 				ctx.fill();
 				ctx.closePath();
 			}
+			ctx.beginPath();
+			ctx.fillStyle = "black";
+			ctx.arc(0,0,11,0,2*Math.PI);
+			ctx.fill();
+			ctx.closePath();
 		}
 
 		function drawDynamicPathHex(ctx, lines, hexString, initialPoint) {
@@ -148,7 +154,7 @@
 
 			ctx.translate(initialPoint.x, initialPoint.y);
 
-			var radius = 8;
+			var radius = 12;
 
 			for (var i=0; i<string.length; i++) {
 				ctx.beginPath();
@@ -193,6 +199,13 @@
 				var nvec = tvec.add(Vec2.normWithAngle(tvec.angle() + Math.PI/2).mag(15));
 				// ctx.fillText(digit, nvec.x, nvec.y);
 
+				ctx.stroke();
+				ctx.fill();
+				ctx.closePath();
+				ctx.beginPath();
+				ctx.fillStyle = "white";
+				ctx.fillText(digit, 0, 0);
+
 				ctx.translate(line.end.x, line.end.y);
 
 				current = current.add(line.end.clone());
@@ -202,6 +215,7 @@
 				ctx.stroke();
 				ctx.fill();
 				ctx.closePath();
+
 			}
 
 			ctx.beginPath();
@@ -228,7 +242,7 @@
 			var lines = [];
 			var begin = Vec2.zero();
 			var angle = 2*Math.PI / n;
-			var angleOffset = -Math.PI / 2;
+			var angleOffset = -Math.PI/2; // + (Math.PI/32);
 
 			for (var i=0; i<n; i++) {
 				var end = Vec2.normWithAngle(angle * i + angleOffset).mag(s);
