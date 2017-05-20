@@ -175,6 +175,27 @@ function Color() {
 		return new Color(my.r(), my.g(), my.b(), my.a());
 	};
 
+	// based on code found here: http://stackoverflow.com/questions/1855884/determine-font-color-based-on-background-color
+	my.contrast = function() {
+		// my components
+		var c = my.components();
+		// perceptive luminance (note that the human eye favors green colors)
+		var pl = 1 - ( 0.299 * c.r + 0.587 * c.g + 0.114 * c.b) / 255;
+		
+		return pl < 0.5 ? Color(0,0,0) : Color(255,255,255);
+	};
+
+	my.complement = function() {
+		var c = my.components();
+
+		// calculate difference from 255 for each component
+		var rnew = 255 - c.r;
+		var gnew = 255 - c.g;
+		var bnew = 255 - c.b;
+
+		return Color(rnew, gnew, bnew);
+	};
+
 	return my;
 }
 
@@ -198,6 +219,7 @@ Color.hexToRGB = function(hex) {
     b: parseInt(result[3], 16)
 	} : null;
 };
+
 
 
 function colorTest() {
