@@ -8,6 +8,7 @@
 	<script src="js/Vec2.js"></script>
 	<script src="js/Color.js"></script>
 	<script src="js/jscolor/jscolor.min.js"></script>
+	<script src="js/tangle/Tangle.js"></script>
 
 	<style>
 		html, body {
@@ -98,9 +99,20 @@
 			margin-right: 5em;
 			margin-top: 10px;
 		}
+		.interpolation-div {
+			position: relative;
+		}
 		.arrow {
+			width: 145px;
 			font-size: 3em;
 			color: white;
+			transform: translate(100%,0%) scale(3,1);
+		}
+		.terp-text {
+			color: white;
+			position: absolute;
+			left: 20px;
+			top: 37px;
 		}
 	</style>
 </head>
@@ -119,8 +131,9 @@
 				<label>Start Color</label>
 				<input class="start-color jscolor { hash: true, uppercase: false }" value="#0099ff">
 			</div>
-			<div class="arrow">
-				<p>→</p>
+			<div class="interpolation-div">
+				<p class="terp-text">interpolation</p>
+				<p class="arrow">→</p>
 			</div>
 			<div class="color-div start-div">
 				<label>Stop Color</label>
@@ -134,7 +147,6 @@
 
 
 	<script>
-
 		var hexCanvas = d3.select(".hex-legend")
 				.attr("width", 150)
 				.attr("height", 150);
