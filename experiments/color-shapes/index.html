@@ -10,97 +10,112 @@
 
 	<style>
 		canvas {
-			padding: 20px;
+			/*border: 1px solid #333;*/
+			padding: 0px;
+			padding: 5px;
+			margin: 5px;
 		}
 	</style>
 </head>
 <body>
 	
-	<canvas id="canvas"></canvas>
+	<!-- <canvas id="canvas"></canvas> -->
+	<div id="canvases"></div>
 
 
 	<script>
 
 		
 
-		var hl = hexLines(70);
+		var hl = hexLines(30);
+		var width = 150;
+		var height = 220;
 
-		var text = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "a", "b", "c", "d", "e", "f"];
-		var colorlist = [];
-		var canvas = document.getElementById("canvas");
-		canvas.width = 1200;
-		canvas.height = 700;
-		var ctx = canvas.getContext("2d");
+		var n = 256; //224; //24;
+		var canvasesD3 = d3.select("#canvases").selectAll(".canvases").data(d3.range(n))
+			.enter().append("canvas")
+				.attr("class", "canvases")
+				.attr("width", width)
+				.attr("height", height);
 
-
-		var et = 1000;
-		var ct = Date.now();
-		var pt = Date.now();
-		var delay = 1000;
-		var raf = window.requestAnimationFrame(loop);
-
-		function loop() {
-		 raf = window.requestAnimationFrame(loop);
-
-			ct = Date.now();
-			et += ct - pt;
-			pt = ct;
-
-			// console.log(ct + " | " + pt + " | " + et);
-
-			if (et >= delay) {
-				et = 0;
-				color = Color().hex();
-				colorlist.push(color);
-				hexTextLoc = new Vec2(250, 100);
-				draw(ctx, color, hl, hexTextLoc, loc, center);
-			}
-		}
-
-
-
-		var loc = new Vec2(100,100);
-
-		function queue() {
-			raf = window.requestAnimationFrame(loop);
-		}
-		function dequeue() {
-			window.cancelAnimationFrame(raf);
-		}
-
-		var running = true;
-		window.addEventListener("click", function(e){
-			if (running) dequeue();
-			else queue();
-			running = !running;
+		var contexts = [];
+		var canvases = [];
+		canvasesD3.each(function(d,i){
+			canvases[i] = this;
+			contexts[i] = this.getContext("2d");
 		});
 
+
+		var i = d3.interpolate({colors: ["#ff0000"]}, {colors: ["#00ffff"]});
+
+		var text = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "a", "b", "c", "d", "e", "f"];
+		// var clist = buildCustomArray(n, function(){ return Color().hex(); });
+		var colorlist = buildCustomArray(n, function(b){ 
+			var c = i(b/n).colors.toString();
+			c = c.substring(4,c.length-1);
+			c = c.split(",");
+			c = Color(+c[0], +c[1], +c[2]).hex();
+			// console.log(c);
+			
+			return c;
+		})
+
+		// var loc = new Vec2(100,100);
+
+		var center = new Vec2(width/2, height/2);
+		
 		window.addEventListener("keydown", function(e){
 			if (e.keyCode === 37) {
 				// left arrow
-				color = Color().hex();
-				hexTextLoc = new Vec2(250, 100);
-				draw(ctx, color, hl, hexTextLoc, loc, center);
+				colorlist = buildCustomArray(n, function(){ return Color().hex(); });
+				for (var i=1; i<n; i++) {
+					color = colorlist[i];
+
+					d3.select(canvases[i]).style("border", "3px solid " + color);
+
+					resetCanvasMatrix(contexts[i]);
+
+					contexts[i].clearRect(0,0,width,height);
+
+					var c = findCentroid(hl, color, Vec2.zero());
+					var centroid = new Vec2(-c.centroid.x, -c.centroid.y);
+					centroid = Vec2.add(center.clone(), centroid.clone());
+
+					hexTextLoc = new Vec2(width/2, 20);
+					contexts[i].fillStyle = color;
+					contexts[i].font = "16px Helvetica";
+					contexts[i].textBaseline = "middle";
+					contexts[i].textAlign = "center";
+					contexts[i].fillText(color, hexTextLoc.x, hexTextLoc.y);
+
+		  		drawDynamicPathHex(contexts[i], hl, color, centroid, 3, 4);
+				}
+				
 			}
 		})
 
-		function draw(ctx, color, hexlist, hexTextLoc, legendLoc, startPoint) {
-			console.log(color);
-			resetCanvasMatrix(ctx);
-			ctx.clearRect(0, 0, canvas.width, canvas.height);
+		drawHexLegend(contexts[0], hexLines(55), center.clone());
+		for (var i=1; i<n; i++) {
+			color = colorlist[i];
 
-			ctx.fillStyle = color;
-			ctx.font = "16px Helvetica";
-			ctx.textBaseline = "middle";
-			ctx.textAlign = "center";
-			ctx.fillText(color, hexTextLoc.x, hexTextLoc.y);
-			drawHexLegend(ctx, hexlist, legendLoc);
-			drawDynamicPathHex(ctx, hexlist, color, startPoint);
+			d3.select(canvases[i]).style("border", "3px solid " + color);
+
+			contexts[i].clearRect(0,0,width,height);
+
+			var c = findCentroid(hl, color, Vec2.zero());
+			var centroid = new Vec2(-c.centroid.x, -c.centroid.y);
+			centroid = Vec2.add(center.clone(), centroid.clone());
+
+			hexTextLoc = new Vec2(width/2, 20);
+			contexts[i].fillStyle = color;
+			contexts[i].font = "16px Helvetica";
+			contexts[i].textBaseline = "middle";
+			contexts[i].textAlign = "center";
+			contexts[i].fillText(color, hexTextLoc.x, hexTextLoc.y);
+
+  		drawDynamicPathHex(contexts[i], hl, color, centroid, 3, 4);
 		}
-
-		var center = new Vec2(canvas.width/2, canvas.height/2-100);
 		
-
 		function drawHexLegend(ctx, hl, location) {
 			var lines = d3.range(16);
 			ctx.translate(location.x, location.y);
@@ -135,9 +150,35 @@
 				ctx.fill();
 				ctx.closePath();
 			}
+			ctx.beginPath();
+			ctx.fillStyle = "black";
+			ctx.arc(0,0,5,0,2*Math.PI);
+			ctx.fill();
+			ctx.closePath();
 		}
 
-		function drawDynamicPathHex(ctx, lines, hexString, initialPoint) {
+		function findCentroid(lines, hexString, initialPoint) {
+			var string = hexString.substring(1);
+			var current = initialPoint.clone();
+
+			var points = [];
+			points.push({ x: current.x, y: current.y });
+
+			for (var i=0; i<string.length; i++) {
+				var digit = string.charAt(i);
+				var line = lines(digit);
+
+				current = current.add(line.end.clone()).clone();
+				points.push({ x: current.x, y: current.y });
+			}
+
+			var xbar = sum(points.map(function(a){ return a.x; })) / points.length;
+			var ybar = sum(points.map(function(a){ return a.y; })) / points.length;
+			var centroid = { x: xbar, y: ybar };
+			return { points: points, centroid: centroid };
+		}
+
+		function drawDynamicPathHex(ctx, lines, hexString, initialPoint, linkThickness, startRadius) {
 			var absPoints = [];
 			var current = initialPoint.clone();
 
@@ -148,7 +189,7 @@
 
 			ctx.translate(initialPoint.x, initialPoint.y);
 
-			var radius = 8;
+			var radius = startRadius;
 
 			for (var i=0; i<string.length; i++) {
 				ctx.beginPath();
@@ -175,7 +216,7 @@
 
 				ctx.moveTo(0,0);
 
-				var normLine = line.begin.clone().add(Vec2.normWithAngle(line.end.clone().angle() - Math.PI/2).mag(5));
+				var normLine = line.begin.clone().add(Vec2.normWithAngle(line.end.clone().angle() - Math.PI/2).mag(linkThickness));
 				var negNormLine = normLine.clone().scale(-1);
 				
 				ctx.lineTo(negNormLine.x, negNormLine.y);
@@ -193,6 +234,13 @@
 				var nvec = tvec.add(Vec2.normWithAngle(tvec.angle() + Math.PI/2).mag(15));
 				// ctx.fillText(digit, nvec.x, nvec.y);
 
+				ctx.stroke();
+				ctx.fill();
+				ctx.closePath();
+				ctx.beginPath();
+				ctx.fillStyle = "white";
+				// ctx.fillText(digit, 0, 0);
+
 				ctx.translate(line.end.x, line.end.y);
 
 				current = current.add(line.end.clone());
@@ -202,6 +250,7 @@
 				ctx.stroke();
 				ctx.fill();
 				ctx.closePath();
+
 			}
 
 			ctx.beginPath();
@@ -216,8 +265,11 @@
 
 			var xExtent = d3.extent(absPoints.map(function(m){ return m.x; }));
 			var yExtent = d3.extent(absPoints.map(function(m){ return m.y; }));
+			var xCenter = sum(absPoints.map(function(a){ return m.x })) / absPoints.length;
+			var yCenter = sum(absPoints.map(function(a){ return m.y })) / absPoints.length;
+			var centroid = { x: xCenter, y: yCenter };
 
-			return [xExtent, yExtent];
+			return [xExtent, yExtent, centroid];
 		}
 
 		
@@ -228,7 +280,7 @@
 			var lines = [];
 			var begin = Vec2.zero();
 			var angle = 2*Math.PI / n;
-			var angleOffset = -Math.PI / 2;
+			var angleOffset = -Math.PI/2; // + (Math.PI/32);
 
 			for (var i=0; i<n; i++) {
 				var end = Vec2.normWithAngle(angle * i + angleOffset).mag(s);
