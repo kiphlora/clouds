@@ -7,31 +7,158 @@
 	<script src="js/util.js"></script>
 	<script src="js/Vec2.js"></script>
 	<script src="js/Color.js"></script>
+	<script src="js/jscolor/jscolor.min.js"></script>
 
 	<style>
-		canvas {
-			/*border: 1px solid #333;*/
+		html, body {
+			box-sizing: border-box;
+			font-family: Helvetica, sans-serif;
+		}
+
+		#canvases canvas {
+			border: 1px solid #333;
 			padding: 0px;
+			margin: -3px 0px;
+		}
+		
+		.hex-legend {
+			/*margin-right: 5em;*/
+			margin-left: 5em;
+			padding: 0;
+		}
+		#controls {
+			display: flex;
+			flex-direction: row;
 			padding: 5px;
-			margin: 5px;
+			justify-content: space-between;
+			align-items: center;
+			position: fixed;
+			width: 100%;
+			background-color: #333;
+			/*background: linear-gradient(to right, #000, #fff);*/
+			left: 0;
+			top: 0;
+			/*border-bottom: 2px solid #333;*/
+			box-shadow: 0px 5px 8px #777;
+		}
+		#controls .color-div {
+			position: relative;
+		}
+		#controls label {
+			font-size: 0.8em;
+			position: absolute;
+			left: 22.5%;
+			top: -12px;
+			color: white;
+		}
+		#controls input {
+			height: 5em;
+			width: 5em;
+			border-radius: 100px;
+			border: none;
+			text-align: center;
+			cursor: pointer;
+			margin: 3px;
+			font-size: 1.3em;
+			border: 3px solid #fff;
+			/*background-color: none;
+			border-bottom: 3px solid #333;*/
+		}
+		#controls button {
+			max-height: 3em;
+			border: none;
+		}
+		#canvases {
+			display: flex;
+			flex-direction: row;
+			flex-wrap: wrap;
+			justify-content: center;
+			margin-top: 15%;
+		}
+		shapely-text {
+		}
+		#shapely-text h1{
+			color: white;
+			font-size: 2.5em;
+			letter-spacing: 5px;
+			font-weight: 100;
+			margin-bottom: 5px;
+		}
+		#shapely-text p {
+			color: #999;
+			letter-spacing: 2px;
+			text-align: center;
+			margin: 10px;
+		}
+		#start-stop-div {
+			display: flex;
+			flex-direction: row;
+			justify-content: center;
+			align-items: center;
+			margin-right: 5em;
+			margin-top: 10px;
+		}
+		.arrow {
+			font-size: 3em;
+			color: white;
 		}
 	</style>
 </head>
 <body>
 	
 	<!-- <canvas id="canvas"></canvas> -->
+	<div id="controls">
+		<canvas class="hex-legend"></canvas>
+		<div id="shapely-text">
+			<h1>Shapely Colors</h1>
+			<p>mapping hex to direction</p>
+			<p>by Brett Moran</p>
+		</div>
+		<div id="start-stop-div">
+			<div class="color-div start-div">
+				<label>Start Color</label>
+				<input class="start-color jscolor { hash: true, uppercase: false }" value="#0099ff">
+			</div>
+			<div class="arrow">
+				<p>→</p>
+			</div>
+			<div class="color-div start-div">
+				<label>Stop Color</label>
+				<input class="stop-color jscolor { hash: true, uppercase: false }" value="#ff0099">
+			</div>	
+		</div>
+		
+		<!-- <button class="enact-color-changes">Update Colors</button> -->
+	</div>
 	<div id="canvases"></div>
 
 
 	<script>
 
+		var hexCanvas = d3.select(".hex-legend")
+				.attr("width", 150)
+				.attr("height", 150);
+		var hexCtx = hexCanvas.node().getContext("2d");
 		
+		d3.select(".start-color").on("change", updateColors);
+		d3.select(".stop-color").on("change", updateColors);
+		
+		var startColor = d3.select(".start-color").node();
+		var stopColor = d3.select(".stop-color").node();
+
+		var colorUpdateButton = d3.select(".enact-color-changes")
+			.on("click", updateColors)
+
+		function updateColors() {
+			colorlist = buildColorList(n, startColor.value, stopColor.value);
+			drawShapelyColors();
+		}
 
 		var hl = hexLines(30);
-		var width = 150;
-		var height = 220;
+		var width = 220;
+		var height = 270;
 
-		var n = 256; //224; //24;
+		var n = 120; //224; //24;
 		var canvasesD3 = d3.select("#canvases").selectAll(".canvases").data(d3.range(n))
 			.enter().append("canvas")
 				.attr("class", "canvases")
@@ -46,112 +173,116 @@
 		});
 
 
-		var i = d3.interpolate({colors: ["#ff0000"]}, {colors: ["#00ffff"]});
+		function buildColorList(n, start, stop) {
+			var i = d3.interpolate({colors: [start]}, {colors: [stop]});
 
-		var text = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "a", "b", "c", "d", "e", "f"];
+			var colorlist = buildCustomArray(n, function(b){ 
+				// b === (n-1) ? 1 : b/n makes sure the last one is 1, so the interpolation
+				// begins exactly at the start color and ends exactly at the stop color
+				var c = i( b === (n-1) ? 1 : b/n ).colors.toString();
+				c = c.substring(4,c.length-1);
+				c = c.split(",");
+				c = Color(+c[0], +c[1], +c[2]);
+				
+				return c;
+			});
+
+			return colorlist;
+		}
+
+		
+		
 		// var clist = buildCustomArray(n, function(){ return Color().hex(); });
-		var colorlist = buildCustomArray(n, function(b){ 
-			var c = i(b/n).colors.toString();
-			c = c.substring(4,c.length-1);
-			c = c.split(",");
-			c = Color(+c[0], +c[1], +c[2]).hex();
-			// console.log(c);
-			
-			return c;
-		})
+		
 
 		// var loc = new Vec2(100,100);
 
 		var center = new Vec2(width/2, height/2);
+		var colorlist;
+
+		window.onload = function() {
+			colorlist = buildColorList(n, startColor.value, stopColor.value);
+			drawHexLegend(hexCtx, hexLines(50), new Vec2(hexCanvas.node().width/2, hexCanvas.node().height/2));
+			drawShapelyColors();
+		}
 		
-		window.addEventListener("keydown", function(e){
-			if (e.keyCode === 37) {
-				// left arrow
-				colorlist = buildCustomArray(n, function(){ return Color().hex(); });
-				for (var i=1; i<n; i++) {
-					color = colorlist[i];
+		function drawShapelyColors() {
+			for (var i=0; i<n; i++) {
+				color = colorlist[i];
+				hex = color.hex();
 
-					d3.select(canvases[i]).style("border", "3px solid " + color);
+				d3.select(canvases[i]).style("border", "0px solid " + hex);
 
-					resetCanvasMatrix(contexts[i]);
+				resetCanvasMatrix(contexts[i]);
 
-					contexts[i].clearRect(0,0,width,height);
+				contexts[i].clearRect(0,0,width,height);
+				contexts[i].beginPath();
+				contexts[i].fillStyle = color.contrast().hex();
+				contexts[i].fillRect(0,0,width,height);
+				contexts[i].closePath();
 
-					var c = findCentroid(hl, color, Vec2.zero());
-					var centroid = new Vec2(-c.centroid.x, -c.centroid.y);
-					centroid = Vec2.add(center.clone(), centroid.clone());
+				var c = findCentroid(hl, hex, Vec2.zero());
+				var centroid = new Vec2(-c.centroid.x, -c.centroid.y);
+				centroid = Vec2.add(center.clone(), centroid.clone());
 
-					hexTextLoc = new Vec2(width/2, 20);
-					contexts[i].fillStyle = color;
-					contexts[i].font = "16px Helvetica";
-					contexts[i].textBaseline = "middle";
-					contexts[i].textAlign = "center";
-					contexts[i].fillText(color, hexTextLoc.x, hexTextLoc.y);
+				hexTextLoc = new Vec2(width/2, 20);
+				contexts[i].fillStyle = hex;
+				contexts[i].font = "16px Helvetica";
+				contexts[i].textBaseline = "middle";
+				contexts[i].textAlign = "center";
+				contexts[i].fillText(hex, hexTextLoc.x, hexTextLoc.y);
 
-		  		drawDynamicPathHex(contexts[i], hl, color, centroid, 3, 4);
-				}
-				
+	  		drawDynamicPathHex(contexts[i], hl, hex, centroid, 3, 4);
 			}
-		})
-
-		drawHexLegend(contexts[0], hexLines(55), center.clone());
-		for (var i=1; i<n; i++) {
-			color = colorlist[i];
-
-			d3.select(canvases[i]).style("border", "3px solid " + color);
-
-			contexts[i].clearRect(0,0,width,height);
-
-			var c = findCentroid(hl, color, Vec2.zero());
-			var centroid = new Vec2(-c.centroid.x, -c.centroid.y);
-			centroid = Vec2.add(center.clone(), centroid.clone());
-
-			hexTextLoc = new Vec2(width/2, 20);
-			contexts[i].fillStyle = color;
-			contexts[i].font = "16px Helvetica";
-			contexts[i].textBaseline = "middle";
-			contexts[i].textAlign = "center";
-			contexts[i].fillText(color, hexTextLoc.x, hexTextLoc.y);
-
-  		drawDynamicPathHex(contexts[i], hl, color, centroid, 3, 4);
 		}
 		
 		function drawHexLegend(ctx, hl, location) {
+			var text = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "a", "b", "c", "d", "e", "f"];
 			var lines = d3.range(16);
 			ctx.translate(location.x, location.y);
-			ctx.strokeStyle = "rgba(0,0,0,0.3)";
-			ctx.fillStyle = "rgba(0,0,0,0.4)";
 			for (var i=0; i<lines.length; i++) {
 				ctx.beginPath();
+				
+				ctx.strokeStyle = "rgba(255,255,255,0.3)";
+				ctx.fillStyle = "rgba(255,255,255,0.4)";
+				
 				var l = hl(i);
 				var b = l.begin;
 				var e = l.end;
 				// console.log(l.color);
 				// ctx.strokeStyle = l.color;
-				var normLine = b.clone().add(Vec2.normWithAngle(e.clone().angle() - Math.PI/2).mag(11));
+				var normLine = b.clone().add(Vec2.normWithAngle(e.clone().angle() - Math.PI/2).mag(8));
 				var negNormLine = normLine.clone().scale(-1);
 				
 				ctx.lineTo(negNormLine.x, negNormLine.y);
 				ctx.lineTo(e.x, e.y);
 				ctx.lineTo(normLine.x, normLine.y);
 				ctx.lineTo(0,0);
-				// ctx.moveTo(b.x, b.y);
-				// ctx.lineTo(e.x, e.y);
+
+				ctx.fill();
+				ctx.closePath();
+				ctx.beginPath();
+
+				ctx.moveTo(b.x, b.y);
+				ctx.lineTo(e.x, e.y);
+				// ctx.strokeStyle = "rgba(255,255,255,0.8)";
 
 				var tvec = e.clone();
 				var m = tvec.mag();
 				tvec = tvec.mag(m*1.2);
 
+				ctx.fillStyle = "#efefef";
 				ctx.textBaseline = "middle"; 
+				ctx.font = "12px Helvetica";
 				ctx.textAlign = "center"; 
 				ctx.fillText(text[i], tvec.x, tvec.y);
 
-				// ctx.stroke();
+				ctx.stroke();
 				ctx.fill();
 				ctx.closePath();
 			}
 			ctx.beginPath();
-			ctx.fillStyle = "black";
+			ctx.fillStyle = "white";
 			ctx.arc(0,0,5,0,2*Math.PI);
 			ctx.fill();
 			ctx.closePath();
@@ -271,8 +402,6 @@
 
 			return [xExtent, yExtent, centroid];
 		}
-
-		
 
 		function hexLines(scale) {
 			var s = undefined ? 1 : scale;
