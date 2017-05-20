@@ -12,6 +12,8 @@
 		canvas {
 			/*border: 1px solid #333;*/
 			padding: 0px;
+			padding: 5px;
+			margin: 5px;
 		}
 	</style>
 </head>
@@ -26,10 +28,10 @@
 		
 
 		var hl = hexLines(30);
-		var width = 140;
+		var width = 150;
 		var height = 220;
 
-		var n = 30;
+		var n = 300; //24;
 		var canvasesD3 = d3.select("#canvases").selectAll(".canvases").data(d3.range(n))
 			.enter().append("canvas")
 				.attr("class", "canvases")
@@ -44,9 +46,19 @@
 		});
 
 
+		var i = d3.interpolate({colors: ["#ff0000"]}, {colors: ["#00ffff"]});
 
 		var text = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "a", "b", "c", "d", "e", "f"];
-		var clist = buildCustomArray(n, function(){ return Color().hex(); });
+		// var clist = buildCustomArray(n, function(){ return Color().hex(); });
+		var clist = buildCustomArray(n, function(b){ 
+			var c = i(b/n).colors.toString();
+			c = c.substring(4,c.length-1);
+			c = c.split(",");
+			c = Color(+c[0], +c[1], +c[2]).hex();
+			// console.log(c);
+			
+			return c;
+		})
 		colorlist = ["#ff6600", "#0099ff", "#ff0099", "#99ff00", "#0019ff", "#00ffe6"];
 		colorlist = colorlist.concat(clist);
 
@@ -58,8 +70,10 @@
 			if (e.keyCode === 37) {
 				// left arrow
 				colorlist = buildCustomArray(n, function(){ return Color().hex(); });
-				for (var i=0; i<n; i++) {
+				for (var i=1; i<n; i++) {
 					color = colorlist[i];
+
+					d3.select(canvases[i]).style("border", "3px solid " + color);
 
 					resetCanvasMatrix(contexts[i]);
 
@@ -82,8 +96,12 @@
 			}
 		})
 
-		for (var i=0; i<n; i++) {
+		drawHexLegend(contexts[0], hexLines(55), center.clone());
+		for (var i=1; i<n; i++) {
 			color = colorlist[i];
+
+			d3.select(canvases[i]).style("border", "3px solid " + color);
+
 			contexts[i].clearRect(0,0,width,height);
 
 			var c = findCentroid(hl, color, Vec2.zero());
@@ -136,7 +154,7 @@
 			}
 			ctx.beginPath();
 			ctx.fillStyle = "black";
-			ctx.arc(0,0,11,0,2*Math.PI);
+			ctx.arc(0,0,5,0,2*Math.PI);
 			ctx.fill();
 			ctx.closePath();
 		}
